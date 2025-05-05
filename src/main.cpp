@@ -238,30 +238,38 @@ static std::string on_command(eHyprCtlOutputFormat format, std::string request) 
             continue;
         auto workspaces = view->layout->overview_layout;
         auto monitor = view->monitor_id;
+      
+        if (json) {
+            output << "\n    \"" << monitor << "\": {"; 
+        }
+        else {
+            output << "Monitor ID " << monitor << ":\n";
+        }
+
         for (auto [id, workspace] : workspaces) {
             if (json) {
-                output << "\n    \"" << id << "\": {\n";
-                output << "        \"monitor\": " << monitor << ",\n";
-                output << "        \"x\": " << workspace.x << ",\n";
-                output << "        \"y\": " << workspace.y << "\n";
-                output << "    },";
+                output << "\n        \"" << id << "\": {\n";
+                output << "            \"x\": " << workspace.x << ",\n";
+                output << "            \"y\": " << workspace.y << "\n";
+                output << "        },";
             } else {
-                output << "Workspace ID " << id << ":\n";
-                output << "        monitor: " << monitor << "\n";
-                output << "        x: " << workspace.x << "\n";
-                output << "        y: " << workspace.y << "\n\n";
+                output << "        Workspace ID " << id << ":\n";
+                output << "               x: " << workspace.x << "\n";
+                output << "               y: " << workspace.y << "\n\n";
             }
+        }
+
+        if (json) {
+            output.seekp(-1, std::ios_base::end); // Skip extra comma
+            output << "\n    },";
         }
     }
 
     if (json) {
-        std::string result = output.str();
-        result.pop_back(); // Extra comma
-        result += "\n}";
-        return result;
-    } else {
-        return output.str();
+        output.seekp(-1, std::ios_base::end); // Skip extra comma
+        output << "\n}";
     }
+    return output.str();
 }
 
 static void init_functions() {
