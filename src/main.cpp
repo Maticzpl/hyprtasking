@@ -239,16 +239,18 @@ static std::string on_command(eHyprCtlOutputFormat format, std::string request) 
     for (PHTVIEW& view : ht_manager->views) {
         if (view == nullptr)
             continue;
-        std::unordered_map<WORKSPACEID, HTLayoutBase::HTWorkspace> workspaces = view->layout->overview_layout;
+        auto workspaces = view->layout->overview_layout;
+        auto monitor = view->monitor_id;
         for (auto [id, workspace] : workspaces) {
             if (json) {
                 output << "\n    \"" << id << "\": {\n";
+                output << "        \"monitor\": " << monitor << ",\n";
                 output << "        \"x\": " << workspace.x << ",\n";
                 output << "        \"y\": " << workspace.y << "\n";
                 output << "    },";
-            }
-            else {
+            } else {
                 output << "Workspace ID " << id << ":\n";
+                output << "        monitor: " << monitor << "\n";
                 output << "        x: " << workspace.x << "\n";
                 output << "        y: " << workspace.y << "\n\n";
             }
@@ -260,8 +262,7 @@ static std::string on_command(eHyprCtlOutputFormat format, std::string request) 
         result.pop_back(); // Extra comma
         result += "\n}";
         return result;
-    }
-    else {
+    } else {
         return output.str();
     }
 }
@@ -380,11 +381,10 @@ static void init_config() {
 }
 
 static void init_commands() {
-    HyprlandAPI::registerHyprCtlCommand(PHANDLE, SHyprCtlCommand {
-        .name = "hyprtasking workspaces",
-        .exact = true,
-        .fn = &on_command  
-    });
+    HyprlandAPI::registerHyprCtlCommand(
+        PHANDLE,
+        SHyprCtlCommand {.name = "hyprtasking workspaces", .exact = true, .fn = &on_command}
+    );
 }
 
 APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
