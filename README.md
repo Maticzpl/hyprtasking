@@ -201,3 +201,6 @@ All options should are prefixed with `plugin:hyprtasking:`.
     - If the string is `'original'`, hyprtasking will attempt to switch to the workspace in which the overview was shown initially
     - (Fallback) If the string is `'active'`, hyprtasking will switch to the monitor's active workspace.
 
+### Hyprctl commands
+
+- `hyprctl hyprtasking workspaces` - Lists all potential workspaces by ID used by Hyprland.
