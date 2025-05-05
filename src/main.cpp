@@ -222,6 +222,47 @@ static void on_config_reloaded(void* thisptr, SCallbackInfo& info, std::any args
     }
 }
 
+static std::string on_command(eHyprCtlOutputFormat format, std::string request) {
+    if (ht_manager == nullptr)
+        return ""; // Give some error message idk
+
+    std::stringstream output;
+    bool json = format == eHyprCtlOutputFormat::FORMAT_JSON;
+
+    if (json) {
+        output << "{";
+    }
+
+    for (PHTVIEW& view : ht_manager->views) {
+        if (view == nullptr)
+            continue;
+        std::unordered_map<WORKSPACEID, HTLayoutBase::HTWorkspace> workspaces = view->layout->overview_layout;
+        for (auto [id, workspace] : workspaces) {
+            if (json) {
+                output << "\n    \"" << id << "\": {\n";
+                output << "        \"x\": " << workspace.x << ",\n";
+                output << "        \"y\": " << workspace.y << "\n";
+                output << "    },";
+            }
+            else {
+                output << "Workspace ID " << id << ":\n";
+                output << "        x: " << workspace.x << "\n";
+                output << "        y: " << workspace.y << "\n\n";
+            }
+        }
+    }
+
+    if (json) {
+        std::string result = output.str();
+        result.pop_back(); // Extra comma
+        result += "\n}";
+        return result;
+    }
+    else {
+        return output.str();
+    }
+}
+
 static void init_functions() {
     bool success = true;
 
@@ -336,6 +377,14 @@ static void init_config() {
     HyprlandAPI::reloadConfig();
 }
 
+static void init_commands() {
+    HyprlandAPI::registerHyprCtlCommand(PHANDLE, SHyprCtlCommand {
+        .name = "hyprtasking workspaces",
+        .exact = true,
+        .fn = &on_command  
+    });
+}
+
 APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     PHANDLE = handle;
 
@@ -353,6 +402,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     add_dispatchers();
     register_callbacks();
     init_functions();
+    init_commands();
     register_monitors();
 
     Debug::log(LOG, "[Hyprtasking] Plugin initialized");
